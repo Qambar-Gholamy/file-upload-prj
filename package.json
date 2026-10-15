@@ -6,6 +6,7 @@
   "author": "Qanbar",
   "scripts": {
     "start": "node server.js",
+    "dev": "node --watch server.js",
     "start:prod": "cross-env NODE_ENV=production nodemon server.js",
     "debug": "ndb server.js"
   },

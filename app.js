@@ -1,15 +1,18 @@
 const express = require('express');
-const cors= require('cors');
+const cors = require('cors');
 const audioRoutes = require('./routes/audioRoute');
+const pdfRoutes = require('./routes/pdfRoute');
 const userRouter = require('./routes/userRoutes.js');
+const AppError = require('./utils/AppError');
 
 const app = express();
 app.use(cors());
 app.get('/', (req, res) => {
   res.send('API is running');
 });
-// Move audio routes BEFORE json parser to allow multer multipart processing
+// Move audio & pdf routes BEFORE json parser to allow multer multipart processing
 app.use('/api/audio', audioRoutes);
+app.use('/api/pdf', pdfRoutes);
 app.use(express.json());
 // /* ------------------------  STATIC FILES (public/) -------------------------- */
 // app.use(express.static(path.join(__dirname, 'public')));
@@ -40,10 +43,19 @@ app.use('/api/users', userRouter);
 
 /* --------------------------- 8) 404 HANDLER --------------------------------- */
 app.all(/.*/, (req, res, next) => {
-  const message =
-    process.env.NODE_ENV === 'development'
-      ? `Can not find ${req.originalUrl} on this server!`
-      : 'Resource not found!';
+  next(new AppError(`Can not find ${req.originalUrl} on this server!`, 404));
+});
+
+/* --------------------------- 9) GLOBAL ERROR HANDLER ------------------------- */
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || (err.name === 'MulterError' ? 400 : 500);
+  const status = err.status || 'error';
+
+  res.status(statusCode).json({
+    status,
+    message: err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
 });
 
 module.exports = app;

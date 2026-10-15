@@ -80,8 +80,22 @@ const uploadBulkAudio = async (files, publicIds) => {
   return results;
 };
 
+// delete audio
+const deleteAudio = (publicId) =>
+  new Promise((resolve, reject) => {
+    cloudinary.uploader.destroy(
+      publicId,
+      { resource_type: 'video' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+  });
+
 module.exports = {
   uploadAudio,
   uploadBulkAudio,
-  getAllAudios
+  getAllAudios,
+  deleteAudio,
 };

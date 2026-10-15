@@ -3,6 +3,7 @@ const {
   uploadAudio,
   uploadBulkAudio,
   getAllAudios,
+  deleteAudio,
 } = require('../models/audioModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
@@ -34,7 +35,7 @@ const getAudioList = catchAsync(async (req, res, next) => {
 
 // POST /api/audio/upload
 const uploadAudioHandler = catchAsync(async (req, res, next) => {
-  const { file } = req;
+  const file = req.file || (req.files && req.files[0]);
 
   if (!file) {
     return next(new AppError('File is required', 400));
@@ -53,7 +54,7 @@ const uploadAudioHandler = catchAsync(async (req, res, next) => {
 
 // BULK upload
 const bulkUploadAudioHandler = catchAsync(async (req, res, next) => {
-  const { files } = req;
+  const files = req.files && req.files.length > 0 ? req.files : (req.file ? [req.file] : []);
 
   if (!files || files.length === 0) {
     return next(new AppError('No files uploaded', 400));
@@ -78,9 +79,57 @@ const bulkUploadAudioHandler = catchAsync(async (req, res, next) => {
   });
 });
 
+// DELETE /api/audio/:id
+const deleteAudioHandler = catchAsync(async (req, res, next) => {
+  let identifier =
+    req.params.id ||
+    req.params.filename ||
+    req.query.publicId ||
+    req.query.id ||
+    req.query.filename ||
+    (req.body && (req.body.publicId || req.body.id || req.body.filename || req.body.url));
+
+  if (Array.isArray(identifier)) {
+    identifier = identifier.join('/');
+  }
+
+  if (!identifier) {
+    return next(new AppError('Please provide an audio id, publicId, or filename to delete', 400));
+  }
+
+  // Resolve publicId: strip file extension and guarantee sounds/ prefix
+  let cleanId = identifier.trim();
+  if (cleanId.startsWith('http://') || cleanId.startsWith('https://')) {
+    const match = cleanId.match(/sounds\/(.+)$/);
+    if (match) {
+      cleanId = `sounds/${match[1]}`;
+    } else {
+      const urlParts = cleanId.split('/');
+      cleanId = urlParts.slice(-2).join('/');
+    }
+  }
+  const withoutPrefix = cleanId.replace(/^sounds\//, '');
+  const { dir, name } = path.parse(withoutPrefix);
+  const publicId = dir ? `sounds/${dir}/${name}` : `sounds/${name}`;
+
+  const result = await deleteAudio(publicId);
+
+  if (result.result === 'not found') {
+    return next(new AppError(`Audio with id/filename '${identifier}' not found`, 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Audio deleted successfully',
+    publicId,
+    result,
+  });
+});
+
 module.exports = {
   getAudioList,
   uploadAudioHandler,
   bulkUploadAudioHandler,
+  deleteAudioHandler,
 };
 
