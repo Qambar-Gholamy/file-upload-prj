@@ -8,6 +8,25 @@ const {
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
+const getFolderName = (folderName) => {
+  if (folderName === undefined || folderName === '') {
+    return '';
+  }
+
+  if (
+    typeof folderName !== 'string' ||
+    folderName.trim() !== folderName ||
+    folderName.includes('\\') ||
+    // eslint-disable-next-line no-control-regex
+    /[\u0000-\u001f]/.test(folderName) ||
+    folderName.split('/').some((segment) => !segment || segment === '.' || segment === '..')
+  ) {
+    throw new AppError('folderName must be a valid folder path', 400);
+  }
+
+  return folderName;
+};
+
 // GET /api/pdf
 const getPdfList = catchAsync(async (req, res, next) => {
   const { cursor, limit, prefix } = req.query;
@@ -45,8 +64,9 @@ const uploadPdfHandler = catchAsync(async (req, res, next) => {
     return next(new AppError('Only PDF files are allowed', 400));
   }
 
+  const folderName = getFolderName(req.body.folderName);
   const { name } = path.parse(file.originalname);
-  const publicId = `pdfs/${name}`;
+  const publicId = ['pdfs', folderName, name].filter(Boolean).join('/');
 
   const result = await uploadPdf(file.buffer, publicId);
 
@@ -81,9 +101,10 @@ const bulkUploadPdfHandler = catchAsync(async (req, res, next) => {
     return next(new AppError('Only PDF files are allowed', 400));
   }
 
+  const folderName = getFolderName(req.body.folderName);
   const publicIds = files.map((file) => {
     const { name } = path.parse(file.originalname);
-    return `pdfs/${name}`;
+    return ['pdfs', folderName, name].filter(Boolean).join('/');
   });
 
   const results = await uploadBulkPdf(files, publicIds);

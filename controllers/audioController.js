@@ -8,11 +8,30 @@ const {
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 
+const getFolderName = (folderName) => {
+  if (folderName === undefined || folderName === '') {
+    return '';
+  }
+
+  if (
+    typeof folderName !== 'string' ||
+    folderName.trim() !== folderName ||
+    folderName.includes('\\') ||
+    // eslint-disable-next-line no-control-regex
+    /[\u0000-\u001f]/.test(folderName) ||
+    folderName.split('/').some((segment) => !segment || segment === '.' || segment === '..')
+  ) {
+    throw new AppError('folderName must be a valid folder path', 400);
+  }
+
+  return folderName;
+};
+
 // GET /api/audio
 const getAudioList = catchAsync(async (req, res, next) => {
   const { cursor, limit, prefix } = req.query;
   const limitNum = Number(limit);
-  
+
   // Input validation
   if (limit && (Number.isNaN(limitNum) || limitNum < 1 || limitNum > 500)) {
     return next(new AppError('Limit must be a number between 1 and 500', 400));
@@ -21,10 +40,10 @@ const getAudioList = catchAsync(async (req, res, next) => {
     return next(new AppError('Prefix must be a string', 400));
   }
 
-  const data = await getAllAudios({ 
-    cursor: cursor || null, 
-    limit: limitNum || 100, 
-    prefix: prefix || 'sounds/' 
+  const data = await getAllAudios({
+    cursor: cursor || null,
+    limit: limitNum || 100,
+    prefix: prefix || 'sounds/'
   });
 
   res.status(200).json({
@@ -41,8 +60,9 @@ const uploadAudioHandler = catchAsync(async (req, res, next) => {
     return next(new AppError('File is required', 400));
   }
 
+  const folderName = getFolderName(req.body && req.body.folderName);
   const { name } = path.parse(file.originalname);
-  const publicId = `sounds/${name}`;
+  const publicId = ['sounds', folderName, name].filter(Boolean).join('/');
 
   const result = await uploadAudio(file.buffer, publicId);
 
@@ -54,7 +74,12 @@ const uploadAudioHandler = catchAsync(async (req, res, next) => {
 
 // BULK upload
 const bulkUploadAudioHandler = catchAsync(async (req, res, next) => {
-  const files = req.files && req.files.length > 0 ? req.files : (req.file ? [req.file] : []);
+  let files = [];
+  if (req.files && req.files.length > 0) {
+  ({files} = req.files);
+  } else if (req.file) {
+    files = [req.file];
+  }
 
   if (!files || files.length === 0) {
     return next(new AppError('No files uploaded', 400));
@@ -64,9 +89,10 @@ const bulkUploadAudioHandler = catchAsync(async (req, res, next) => {
     return next(new AppError('Max 200 files allowed', 400));
   }
 
-  const publicIds = files.map(file => {
+  const folderName = getFolderName(req.body && req.body.folderName);
+  const publicIds = files.map((file) => {
     const { name } = path.parse(file.originalname);
-    return `sounds/${name}`;
+    return ['sounds', folderName, name].filter(Boolean).join('/');
   });
 
   const results = await uploadBulkAudio(files, publicIds);
@@ -132,4 +158,3 @@ module.exports = {
   bulkUploadAudioHandler,
   deleteAudioHandler,
 };
-
