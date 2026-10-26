@@ -51,11 +51,16 @@ app.use((err, req, res, next) => {
   const statusCode = err.statusCode || (err.name === 'MulterError' ? 400 : 500);
   const status = err.status || 'error';
 
-  res.status(statusCode).json({
+  const response = {
     status,
     message: err.message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    response.stack = err.stack;
+  }
+
+  res.status(statusCode).json(response);
 });
 
 module.exports = app;

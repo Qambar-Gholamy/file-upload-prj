@@ -76,7 +76,8 @@ const uploadAudioHandler = catchAsync(async (req, res, next) => {
 const bulkUploadAudioHandler = catchAsync(async (req, res, next) => {
   let files = [];
   if (req.files && req.files.length > 0) {
-  ({files} = req.files);
+    // eslint-disable-next-line prefer-destructuring
+    files = req.files;
   } else if (req.file) {
     files = [req.file];
   }

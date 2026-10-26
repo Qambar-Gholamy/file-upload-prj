@@ -80,7 +80,8 @@ const uploadPdfHandler = catchAsync(async (req, res, next) => {
 const bulkUploadPdfHandler = catchAsync(async (req, res, next) => {
   let files = [];
   if (req.files && req.files.length > 0) {
-    ({ files } = req);
+    // eslint-disable-next-line prefer-destructuring
+    files = req.files;
   } else if (req.file) {
     files = [req.file];
   }
