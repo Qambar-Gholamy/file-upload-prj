@@ -1,0 +1,67 @@
+variable "SENDGRID_PASSWORD" {
+    value "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" {}
+}
+
+variable "SENDGRID_USERNAME" {
+    value "apikey" {}
+}
+
+variable "API_SECRET" {
+    value "KERVgw-SxB55S_6xzLsvUsWXpKI" {}
+}
+
+variable "API_KEY" {
+    value "658963547188383" {}
+}
+
+variable "CLOUD_NAME" {
+    value "duttxm3m0" {}
+}
+
+variable "EMAIL_FROM" {
+    value "qam1@gmail.com" {}
+}
+
+variable "EMAIL_PORT" {
+    value "25" {}
+}
+
+variable "EMAIL_HOST" {
+    value "sandbox.smtp.mailtrap.io" {}
+}
+
+variable "EMAIL_PASSWORD" {
+    value "e4716029eb5df2" {}
+}
+
+variable "EMAIL_USERNAME" {
+    value "2f0587e61d3e55" {}
+}
+
+variable "JWT_COOKIE_EXPIRES_IN" {
+    value "90" {}
+}
+
+variable "JWT_EXPIRES_IN" {
+    value "90d" {}
+}
+
+variable "JWT_SECRET" {
+    value "for-test-only-pass-word" {}
+}
+
+variable "DATABASE_PASSWORD" {
+    value "K092S4ewm34jfafM" {}
+}
+
+variable "DATABASE" {
+    value "mongodb+srv://qamgholamy_db_user:K092S4ewm34jfafM@cluster0.ucwh83k.mongodb.net/" {}
+}
+
+variable "PORT" {
+    value "3000" {}
+}
+
+variable "NODE_ENV" {
+    value "development" {}
+}
