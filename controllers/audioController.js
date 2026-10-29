@@ -29,8 +29,9 @@ const getFolderName = (folderName) => {
 
 // GET /api/audio
 const getAudioList = catchAsync(async (req, res, next) => {
-  const { cursor, limit, prefix } = req.query;
+  const { cursor, limit, prefix, folderName: requestedFolderName } = req.query;
   const limitNum = Number(limit);
+  const folderName = getFolderName(requestedFolderName);
 
   // Input validation
   if (limit && (Number.isNaN(limitNum) || limitNum < 1 || limitNum > 500)) {
@@ -43,7 +44,8 @@ const getAudioList = catchAsync(async (req, res, next) => {
   const data = await getAllAudios({
     cursor: cursor || null,
     limit: limitNum || 100,
-    prefix: prefix || 'sounds/'
+    prefix: prefix || 'sounds/',
+    folderName,
   });
 
   res.status(200).json({

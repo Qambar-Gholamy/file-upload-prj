@@ -1,6 +1,6 @@
 const cloudinary = require('../utils/cloudinary');
 
-const uploadAudio = (buffer, publicId) => 
+const uploadAudio = (buffer, publicId) =>
  new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -15,17 +15,26 @@ const uploadAudio = (buffer, publicId) =>
 
     stream.end(buffer);
   });
-const getAllAudios = async ({ cursor = null, limit = 100, prefix = 'sounds/' } = {}) => {
+
+const getAllAudios = async ({
+  cursor = null,
+  limit = 100,
+  prefix = 'sounds/',
+  folderName = '',
+} = {}) => {
   // Basic validation
   if (limit > 1000 || limit < 1) throw new Error('Limit must be between 1 and 1000');
   if (cursor && typeof cursor !== 'string') throw new Error('Cursor must be a string');
 
+  const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`;
   const params = {
     resource_type: 'video',
     type: 'upload',
     max_results: Math.min(limit, 1000),
     total_count: true,
-    prefix: prefix.endsWith('/') ? prefix : `${prefix}/`,
+    prefix: folderName
+      ? `${normalizedPrefix}${folderName.replace(/^\/+|\/+$/g, '')}/`
+      : normalizedPrefix,
   };
   if (cursor) {
     params.next_cursor = cursor;
@@ -38,7 +47,10 @@ const getAllAudios = async ({ cursor = null, limit = 100, prefix = 'sounds/' } =
     id: r.public_id.split('/').pop().replace(/[^a-zA-Z0-9]/g, '_'),
     publicId: r.public_id,
     url: r.secure_url,
-  }));
+  })).filter((audio) => (
+    !folderName ||
+    (audio.publicId.includes(folderName) && audio.url.includes(folderName))
+  ));
 
   return {
     audios,
